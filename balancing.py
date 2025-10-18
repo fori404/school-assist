@@ -1,253 +1,262 @@
-numReactants = int(input("num reactants: "))
-numProducts = int(input("num products: "))
+import tkinter
 
-numInputs = numReactants + numProducts
-numFoundElements = 0
-numInts = 0
+root = tkinter.Tk()
 
-finalStr = ""
+root.title("marb - v1.0")
+root.geometry("320x180")
 
-foundElements = []
-reactants = []
-takenRow = []
-takenCol = []
-products = []
-counts = []
-seq2 = []
-seq = []
+label = tkinter.Label(root, text="chemical equation:")
+label.pack(pady=1)
 
-resVals = {}
-finals = {}
-vars1 = {}
-vars2 = {}
-mains = {}
+reactantsEntry = tkinter.Entry(root, width=10)
+reactantsEntry.pack(side="left", padx=(50, 10), pady=1)
 
-for i in range(numReactants):
-    reactant = [{} for _ in range(int(input(f"num atoms in reactant #{i + 1}: ")))]
+productsEntry = tkinter.Entry(root, width=10)
+productsEntry.pack(side="right", padx=(10, 50), pady=1)
 
-    for i in range(len(reactant)):
-        idx = input(f"atom #{i + 1} name: ")
+def onClick():
+    reactantsText = reactantsEntry.get()
+    productsText = productsEntry.get()
 
-        if not idx in foundElements:
-            numFoundElements += 1
+    for reactant in reactantsText.replace(" ", "").split("+"):
+        print(reactant)
 
-            foundElements.append(idx)
-        
-        reactant[i][idx] = int(input("amount: "))
-    
-    reactants.append(reactant)
+    for product in productsText.replace(" ", "").split("+"):
+        print(product)
 
-matrix = [[] for _ in range(numFoundElements)]
+balanceButton = tkinter.Button(root, text = "balance", command=onClick)
+balanceButton.pack(pady = 1)
 
-for i in range(numProducts):
-    product = [{} for _ in range(int(input(f"num atoms in product #{i + 1}: ")))]
+output = tkinter.Label(root, height=20, width=30, justify="center")
+output.configure(text="chemical")
+output.pack(pady=10)
 
-    for i in range(len(product)):
-        idx = input(f"atom #{i + 1} name: ")
-        
-        product[i][idx] = int(input("amount: "))
-    
-    products.append(product)
+def balance(reactants, products):
+    numReactants = len(reactants)
+    numProducts = len(products)
+    numInputs = numReactants + numProducts
+    numFoundElements = 0
 
-for i, v in enumerate(reactants):
-    v1: dict
+    foundElements = []
+    reactants = []
+    takenRow = []
+    takenCol = []
+    products = []
+    seq2 = []
+    seq = []
 
-    for v2 in v:
-        for key in v2.keys():
-            data = {i: v2[key]}
+    resVals = {}
+    finals = {}
+    vars1 = {}
+    vars2 = {}
+    mains = {}
 
-            if vars1.get(key):
-                vars1[key] |= data
-            else:
-                vars1[key] = data
+    matrix = [[] for _ in range(numFoundElements)]
 
-for i, v in enumerate(products):
-    v2: dict
+    for i in range(numReactants):
+        element = reactants[i]
+        if not element in foundElements:
+            foundElements.append(element)
 
-    for v2 in v:
-        for key in v2.keys():
-            data = {i + numReactants: -v2[key]}
+    for i, v in enumerate(reactants):
+        v1: dict
 
-            if vars2.get(key):
-                vars2[key] |= data
-            else:
-                vars2[key] = data
+        for v2 in v:
+            for key in v2.keys():
+                data = {i: v2[key]}
 
-for i, key in enumerate(vars1.keys()):
-    z: dict = vars1[key] | vars2[key]
+                if vars1.get(key):
+                    vars1[key] |= data
+                else:
+                    vars1[key] = data
 
-    matrix[i] = [0] * numInputs
+    for i, v in enumerate(products):
+        v2: dict
 
-    for key2 in z.keys():
-        matrix[i][key2] = z[key2]
+        for v2 in v:
+            for key in v2.keys():
+                data = {i + numReactants: -v2[key]}
 
-square = min(numFoundElements, numInputs)
+                if vars2.get(key):
+                    vars2[key] |= data
+                else:
+                    vars2[key] = data
 
-neighborZeros = []
+    for i, key in enumerate(vars1.keys()):
+        z: dict = vars1[key] | vars2[key]
 
-for i in range(numFoundElements):
-    arr = []
+        matrix[i] = [0] * numInputs
 
-    for _ in range(numInputs):
-        arr.append(0)
-    
-    neighborZeros.append(arr)
+        for key2 in z.keys():
+            matrix[i][key2] = z[key2]
 
-for i in range(numFoundElements):
-    for i2 in range(numInputs):
-        if matrix[i][i2] == 0:
-            continue
+    square = min(numFoundElements, numInputs)
 
-        for i3 in range(numFoundElements):
-            if i3 != i and matrix[i3][i2] == 0:
-                neighborZeros[i][i2] += 1
+    neighborZeros = []
+
+    for i in range(numFoundElements):
+        arr = []
+
+        for _ in range(numInputs):
+            arr.append(0)
+
+        neighborZeros.append(arr)
+
+    for i in range(numFoundElements):
+        for i2 in range(numInputs):
+            if matrix[i][i2] == 0:
+                continue
+
+            for i3 in range(numFoundElements):
+                if i3 != i and matrix[i3][i2] == 0:
+                    neighborZeros[i][i2] += 1
+
+            for i3 in range(numInputs):
+                if i3 != i2 and matrix[i][i3] == 0:
+                    neighborZeros[i][i2] += 1
+
+    goalVal = max([max(neighborZeros[i]) for i in range(numFoundElements)])
+
+    for i in range(goalVal, 0, -1):
+        for i2 in range(numFoundElements):
+            for i3 in range(numInputs):
+                if neighborZeros[i2][i3] == i and not mains.get(i2) and not i2 in takenRow and not i3 in takenCol:
+                    mains[i2] = i3
+
+                    takenRow.append(i2)
+                    takenCol.append(i3)
+
+    for i, i2 in mains.items():
+        divisor = -matrix[i][i2]
 
         for i3 in range(numInputs):
-            if i3 != i2 and matrix[i][i3] == 0:
-                neighborZeros[i][i2] += 1
+            matrix[i][i3] /= divisor
 
-goalVal = max([max(neighborZeros[i]) for i in range(numFoundElements)])
+        matrix[i][i2] *= -1
 
-for i in range(goalVal, 0, -1):
-    for i2 in range(numFoundElements):
-        for i3 in range(numInputs):
-            if neighborZeros[i2][i3] == i and not mains.get(i2) and not i2 in takenRow and not i3 in takenCol:
-                mains[i2] = i3
+    for i in range(numFoundElements):
+        if i in mains.keys():
+            m = matrix[i].copy()
 
-                takenRow.append(i2)
-                takenCol.append(i3)
+            m[mains[i]] = 0
 
-for i, i2 in mains.items():
-    divisor = -matrix[i][i2]
-
-    for i3 in range(numInputs):
-        matrix[i][i3] /= divisor
-
-    matrix[i][i2] *= -1
-
-for i in range(numFoundElements):
-    if i in mains.keys():
-        m = matrix[i].copy()
-
-        m[mains[i]] = 0
-
-        resVals[chr(65 + mains[i])] = m
-
-for i in range(numInputs):
-    short = []
-    idx = False
-
-    for i2 in range(numFoundElements):
-        if matrix[i2][i] != 0:
-            short.append(1)
-
-            idx = i2
-
-    if len(short) == 1 and idx and i in mains.keys():
-        m = matrix[idx].copy()
-
-        m[mains[idx]] = 0
-
-        resVals[chr(65 + mains[idx])] = m
-
-keys = list(resVals.keys())
-
-keys.sort()
-
-resVals = {i: resVals[i] for i in keys}
-
-wanteds = [0] * numInputs
-
-for i in range(numInputs):
-    map = resVals.get(chr(65 + i))
-
-    if not map:
-        wanteds[i] = numInputs
-
-        continue
-
-    for i2, v in enumerate(map):
-        if v != 0:
-            wanteds[i] += 1
-
-target = wanteds.index(max(wanteds))
-
-for i in range(numInputs):
-    finals[chr(65 + i)] = 0
-
-while sum(1 for i in range(numInputs) if finals[chr(65 + i)] % 1 == 0 and finals[chr(65 + i)] != 0) != numInputs:
-    targetChar = chr(65 + target)
-    finals[targetChar] += 1
+            resVals[chr(65 + mains[i])] = m
 
     for i in range(numInputs):
-        if i != target:
-            finals.pop(chr(65 + i))
+        short = []
+        idx = False
 
-    while len(finals) != numInputs:
-        for i, v in resVals.items():
-            sumRes = 0
-            impossible = False
+        for i2 in range(numFoundElements):
+            if matrix[i2][i] != 0:
+                short.append(1)
 
-            for i2, v2 in enumerate(v):
-                final = finals.get(chr(65 + i2))
+                idx = i2
 
-                if not final:
-                    if v2 != 0:
-                        impossible = True
+        if len(short) == 1 and idx and i in mains.keys():
+            m = matrix[idx].copy()
 
-                    continue
+            m[mains[idx]] = 0
 
-                sumRes += final * v2
+            resVals[chr(65 + mains[idx])] = m
 
-            if not impossible and i != targetChar:
-                finals[i] = sumRes
+    keys = list(resVals.keys())
 
-keys = list(finals.keys())
+    keys.sort()
 
-keys.sort()
+    resVals = {i: resVals[i] for i in keys}
 
-finals = {i: finals[i] for i in keys}
+    wanteds = [0] * numInputs
 
-for i, v in enumerate(finals.values()):
-    if i >= numReactants:
-        continue
+    for i in range(numInputs):
+        map = resVals.get(chr(65 + i))
 
-    mol = ""
+        if not map:
+            wanteds[i] = numInputs
 
-    d: dict
+            continue
 
-    for d in reactants[i]:
-        for atom, amount in d.items():
-            mol += atom
+        for i2, v in enumerate(map):
+            if v != 0:
+                wanteds[i] += 1
 
-            if amount != 1:
-                mol += str(amount)
+    target = wanteds.index(max(wanteds))
 
-    if v == 1:
-        seq.append(mol)
-    else:
-        seq.append(f"{int(v)} {mol}")
+    for i in range(numInputs):
+        finals[chr(65 + i)] = 0
 
-for i, v in enumerate(finals.values()):
-    if i < numReactants:
-        continue
+    while sum(1 for i in range(numInputs) if finals[chr(65 + i)] % 1 == 0 and finals[chr(65 + i)] != 0) != numInputs:
+        targetChar = chr(65 + target)
+        finals[targetChar] += 1
 
-    mol = ""
+        for i in range(numInputs):
+            if i != target:
+                finals.pop(chr(65 + i))
 
-    d: dict
+        while len(finals) != numInputs:
+            for i, v in resVals.items():
+                sumRes = 0
+                impossible = False
 
-    for d in products[i - numReactants]:
-        for atom, amount in d.items():
-            mol += atom
+                for i2, v2 in enumerate(v):
+                    final = finals.get(chr(65 + i2))
 
-            if amount != 1:
-                mol += str(amount)
+                    if not final:
+                        if v2 != 0:
+                            impossible = True
 
-    if v == 1:
-        seq2.append(mol)
-    else:
-        seq2.append(f"{int(v)} {mol}")
+                        continue
 
-finalStr = f"\n{" + ".join(seq)} --> {" + ".join(seq2)}\n"
+                    sumRes += final * v2
 
-print(finalStr)
+                if not impossible and i != targetChar:
+                    finals[i] = sumRes
+
+    keys = list(finals.keys())
+
+    keys.sort()
+
+    finals = {i: finals[i] for i in keys}
+
+    for i, v in enumerate(finals.values()):
+        if i >= numReactants:
+            continue
+
+        mol = ""
+
+        d: dict
+
+        for d in reactants[i]:
+            for atom, amount in d.items():
+                mol += atom
+
+                if amount != 1:
+                    mol += str(amount)
+
+        if v == 1:
+            seq.append(mol)
+        else:
+            seq.append(f"{int(v)} {mol}")
+
+    for i, v in enumerate(finals.values()):
+        if i < numReactants:
+            continue
+
+        mol = ""
+
+        d: dict
+
+        for d in products[i - numReactants]:
+            for atom, amount in d.items():
+                mol += atom
+
+                if amount != 1:
+                    mol += str(amount)
+
+        if v == 1:
+            seq2.append(mol)
+        else:
+            seq2.append(f"{int(v)} {mol}")
+
+    return f"\n{" + ".join(seq)} --> {" + ".join(seq2)}\n"
+
+root.mainloop()
