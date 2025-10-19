@@ -3,45 +3,191 @@ import tkinter
 root = tkinter.Tk()
 
 root.title("marb - v1.0")
-root.geometry("320x180")
+root.geometry("320x160")
+root.resizable(width=False, height=False)
 
 label = tkinter.Label(root, text="chemical equation:")
-label.pack(pady=1)
+label.pack(pady=10)
 
-reactantsEntry = tkinter.Entry(root, width=10)
-reactantsEntry.pack(side="left", padx=(50, 10), pady=1)
+frame = tkinter.Frame(root)
+frame.pack()
 
-productsEntry = tkinter.Entry(root, width=10)
-productsEntry.pack(side="right", padx=(10, 50), pady=1)
+reactantsEntry = tkinter.Entry(frame)
+reactantsEntry.pack(side="left", padx=1)
+
+productsEntry = tkinter.Entry(frame)
+productsEntry.pack(side="right", padx=1)
+
+tkinter.Label(frame, text="-->").pack(padx=1)
 
 def onClick():
     reactantsText = reactantsEntry.get()
     productsText = productsEntry.get()
 
-    for reactant in reactantsText.replace(" ", "").split("+"):
-        print(reactant)
+    foundElements = []
+    reactants = []
+    products = []
 
-    for product in productsText.replace(" ", "").split("+"):
-        print(product)
+    reactantsText = reactantsText.replace(" ", "")
+    productsText = productsText.replace(" ", "")
+
+    reactantsArr = reactantsText.split("+")
+    productsArr = productsText.split("+")
+
+    for molecule in reactantsArr:
+        sec = []
+        lastChar = ""
+        elementName = ""
+        elementCount = ""
+        error = False
+
+        for i, char in enumerate(molecule):
+            if lastChar.isdigit():
+                if char.isdigit():
+                    elementCount += char
+                elif char.isupper():
+                    sec.append({elementName: int(elementCount)})
+
+                    elementName = char
+                elif char.islower():
+                    sec.configure(text="invalid reactants")
+
+                    error = True
+            elif lastChar.isupper():
+                if char.isdigit():
+                    elementCount = char
+                elif char.isupper():
+                    sec.append({elementName: 1})
+
+                    elementName = char
+                elif char.islower():
+                    elementName += char
+            elif lastChar.islower():
+                if char.isdigit():
+                    elementCount = char
+                elif char.isupper():
+                    sec.append({elementName: 1})
+
+                    elementName = char
+                elif char.islower():
+                    output.configure(text="invalid reactants")
+
+                    error = True
+            elif char.isupper():
+                elementName = char
+            elif char.islower():
+                elementName += char
+            else:
+                output.configure(text="invalid reactants")
+
+                error = True
+        
+            if i + 1 == len(molecule):
+                if char.isdigit():
+                    sec.append({elementName: int(elementCount)})
+                elif char.isupper():
+                    sec.append({char: 1})
+                elif char.islower():
+                    sec.append({elementName: 1})
+
+            lastChar = char
+
+        reactants.append(sec)
+
+    for molecule in productsArr:
+        sec = []
+        lastChar = ""
+        elementName = ""
+        elementCount = ""
+        error = False
+
+        for i, char in enumerate(molecule):
+            if lastChar.isdigit():
+                if char.isdigit():
+                    elementCount += char
+                elif char.isupper():
+                    sec.append({elementName: int(elementCount)})
+
+                    elementName = char
+                elif char.islower():
+                    sec.configure(text="invalid products")
+
+                    error = True
+            elif lastChar.isupper():
+                if char.isdigit():
+                    elementCount = char
+                elif char.isupper():
+                    sec.append({elementName: 1})
+
+                    elementName = char
+                elif char.islower():
+                    elementName += char
+            elif lastChar.islower():
+                if char.isdigit():
+                    elementCount = char
+                elif char.isupper():
+                    sec.append({elementName: 1})
+                    
+                    elementName = char
+                elif char.islower():
+                    output.configure(text="invalid products")
+
+                    error = True
+            elif char.isupper():
+                elementName = char
+            elif char.islower():
+                elementName += char
+            else:
+                output.configure(text="invalid products")
+
+                error = True
+        
+            if i + 1 == len(molecule):
+                if char.isdigit():
+                    sec.append({elementName: int(elementCount)})
+                elif char.isupper():
+                    sec.append({char: 1})
+                elif char.islower():
+                    sec.append({elementName: 1})
+
+            lastChar = char
+
+        products.append(sec)
+        
+    for i in reactants:
+        if len(i) == 0:
+            output.configure(text="invalid reactants")
+
+            error = True
+    
+    for i in products:
+        if len(i) == 0:
+            output.configure(text="invalid products")
+
+            error = True
+        
+    if not error:
+        for molecule in reactants:
+            for elementGroup in molecule:
+                for name in elementGroup.keys():
+                    if not name in foundElements:
+                        foundElements.append(name)
+
+        output.configure(text=balance(reactants, products, len(foundElements)))
 
 balanceButton = tkinter.Button(root, text = "balance", command=onClick)
-balanceButton.pack(pady = 1)
+balanceButton.pack(pady = 10)
 
-output = tkinter.Label(root, height=20, width=30, justify="center")
-output.configure(text="chemical")
+output = tkinter.Label(root)
 output.pack(pady=10)
 
-def balance(reactants, products):
+def balance(reactants, products, numFoundElements):
     numReactants = len(reactants)
     numProducts = len(products)
     numInputs = numReactants + numProducts
-    numFoundElements = 0
 
-    foundElements = []
-    reactants = []
     takenRow = []
     takenCol = []
-    products = []
     seq2 = []
     seq = []
 
@@ -53,13 +199,8 @@ def balance(reactants, products):
 
     matrix = [[] for _ in range(numFoundElements)]
 
-    for i in range(numReactants):
-        element = reactants[i]
-        if not element in foundElements:
-            foundElements.append(element)
-
     for i, v in enumerate(reactants):
-        v1: dict
+        v2: dict
 
         for v2 in v:
             for key in v2.keys():
@@ -71,8 +212,6 @@ def balance(reactants, products):
                     vars1[key] = data
 
     for i, v in enumerate(products):
-        v2: dict
-
         for v2 in v:
             for key in v2.keys():
                 data = {i + numReactants: -v2[key]}
@@ -89,8 +228,6 @@ def balance(reactants, products):
 
         for key2 in z.keys():
             matrix[i][key2] = z[key2]
-
-    square = min(numFoundElements, numInputs)
 
     neighborZeros = []
 
@@ -218,12 +355,12 @@ def balance(reactants, products):
     finals = {i: finals[i] for i in keys}
 
     for i, v in enumerate(finals.values()):
+        d: dict
+
         if i >= numReactants:
             continue
 
         mol = ""
-
-        d: dict
 
         for d in reactants[i]:
             for atom, amount in d.items():
@@ -242,8 +379,6 @@ def balance(reactants, products):
             continue
 
         mol = ""
-
-        d: dict
 
         for d in products[i - numReactants]:
             for atom, amount in d.items():
