@@ -2,7 +2,7 @@ import tkinter
 
 root = tkinter.Tk()
 
-root.title("marb - v1.1")
+root.title("marb - v1.2")
 root.geometry("320x160")
 root.resizable(width=False, height=False)
 
@@ -75,8 +75,6 @@ def onClick():
                     error = True
             elif char.isupper():
                 elementName = char
-            elif char.islower():
-                elementName += char
             else:
                 output.configure(text="invalid reactants")
 
@@ -174,6 +172,8 @@ def onClick():
                         foundElements.append(name)
 
         output.configure(text=balance(reactants, products, len(foundElements)))
+
+productsEntry.bind("<Return>", onClick)
 
 balanceButton = tkinter.Button(root, text = "balance", command=onClick)
 balanceButton.pack(pady = 10)
