@@ -2,7 +2,7 @@ import tkinter
 
 root = tkinter.Tk()
 
-root.title("marb - v1.0")
+root.title("marb - v1.1")
 root.geometry("320x160")
 root.resizable(width=False, height=False)
 
