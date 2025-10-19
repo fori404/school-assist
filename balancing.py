@@ -110,7 +110,7 @@ def onClick():
 
                     elementName = char
                 elif char.islower():
-                    sec.configure(text="invalid products")
+                    output.configure(text="invalid products")
 
                     error = True
             elif lastChar.isupper():
