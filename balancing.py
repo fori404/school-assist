@@ -50,7 +50,7 @@ def onClick():
 
                     elementName = char
                 elif char.islower():
-                    sec.configure(text="invalid reactants")
+                    output.configure(text="invalid reactants")
 
                     error = True
             elif lastChar.isupper():
